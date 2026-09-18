@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { formatAmount, formatMoney, formatUsd, toUsd } from './money';
+import { formatAmount, formatMoney, formatPrice, formatUsd, toUsd } from './money';
 
 describe('formatAmount', () => {
   test('groups thousands and drops .00 on whole amounts', () => {
@@ -50,5 +50,15 @@ describe('toUsd', () => {
 
   test('refuses a rate that is not positive', () => {
     expect(() => toUsd(10, 0)).toThrow();
+  });
+});
+
+describe('formatPrice', () => {
+  // Prices sit in a column. 89 beside 64.50 makes the eye re-align on every
+  // row, so every price shows cents.
+  test('always shows two places', () => {
+    expect(formatPrice(89)).toBe('89.00');
+    expect(formatPrice(64.5)).toBe('64.50');
+    expect(formatPrice(1299)).toBe('1,299.00');
   });
 });

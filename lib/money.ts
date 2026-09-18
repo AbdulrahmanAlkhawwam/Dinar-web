@@ -9,6 +9,11 @@ export function formatAmount(amount: number): string {
   return Number.isInteger(amount) ? whole.format(amount) : cents.format(amount);
 }
 
+/** A catalog price. Always two places, so a column of them lines up. */
+export function formatPrice(price: number): string {
+  return cents.format(price);
+}
+
 /** An amount in its own currency, e.g. "SP 140,000". */
 export function formatMoney(amount: number, symbol: string): string {
   return `${symbol} ${formatAmount(amount)}`;

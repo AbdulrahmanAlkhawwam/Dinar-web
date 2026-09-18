@@ -1,5 +1,11 @@
-import { NotBuilt } from '@/components/shell/not-built';
+import type { Metadata } from 'next';
 
-export default function Page() {
-  return <NotBuilt title="Categories" phase="phase 3 (catalog)" />;
+import { CategoriesView } from '@/components/categories/categories-view';
+import { currentUser } from '@/lib/server/current-user';
+
+export const metadata: Metadata = { title: 'Categories · Dinar' };
+
+export default async function CategoriesPage() {
+  const user = await currentUser();
+  return <CategoriesView isAdmin={user?.role === 'ADMIN'} />;
 }

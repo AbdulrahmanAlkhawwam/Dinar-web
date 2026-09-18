@@ -1,7 +1,7 @@
 # Dinar Web Dashboard — Design
 
 **Date:** 2026-09-18
-**Status:** phases 1–2 implemented
+**Status:** phases 1–3 implemented
 **Repo:** https://github.com/AbdulrahmanAlkhawwam/Dinar-web
 
 ## Goal

@@ -6,7 +6,8 @@
 //
 // It mirrors the NestJS services' behaviour where the dashboard depends on
 // it: token shapes per route, per-user operations, the rate snapshot rules in
-// OperationsService.update, admin-only currency writes, and the two response
+// OperationsService.update, admin-only catalog and currency writes, the 409 on
+// deleting a category that has products, and the two response
 // envelopes. Any email signs in; an email starting with "admin" is an ADMIN.
 
 import { createServer } from 'node:http';
@@ -21,6 +22,8 @@ const now = () => new Date().toISOString();
 const users = new Map();
 const currencies = new Map();
 const operations = new Map();
+const categories = new Map();
+const products = new Map();
 
 function token(user, ttl, kind) {
   const b64 = (v) => Buffer.from(JSON.stringify(v)).toString('base64url');
@@ -104,6 +107,53 @@ function seedOperations(user) {
 }
 
 const withCurrency = (op) => ({ ...op, currency: currencies.get(op.currencyId) });
+const withCategory = (p) => ({ ...p, category: categories.get(p.categoryId) });
+
+function seedCatalog() {
+  const add = (name) => {
+    const c = { id: randomUUID(), name, image: null, createdAt: now(), updatedAt: now() };
+    categories.set(c.id, c);
+    return c;
+  };
+  const electronics = add('Electronics');
+  const kitchen = add('Kitchen');
+  add('Books');
+  const rows = [
+    ['Smartphone X', 'A powerful smartphone with an all-day battery.', 499.99, 25, electronics],
+    ['Wireless earbuds', 'Noise cancelling, eight hours per charge.', 89, 0, electronics],
+    ['Laptop stand', 'Aluminium, adjustable height.', 51.25, 40, electronics],
+    ['Chef knife', '20cm, forged steel.', 64.5, 12, kitchen],
+    ['Coffee grinder', 'Burr grinder with 18 settings.', 120, 7, kitchen],
+  ];
+  rows.forEach(([title, description, price, stock, category], i) => {
+    const p = {
+      id: randomUUID(), title, description, price, stock, images: [], categoryId: category.id,
+      createdAt: new Date(Date.now() - i * 86400000).toISOString(), updatedAt: now(),
+    };
+    products.set(p.id, p);
+  });
+}
+
+function validateProduct(body, partial) {
+  const errors = [];
+  for (const field of ['title', 'description', 'categoryId'])
+    if (!partial || body[field] !== undefined)
+      if (typeof body[field] !== 'string' || !body[field].trim()) errors.push(`${field} should not be empty`);
+  if (!partial || body.price !== undefined)
+    if (typeof body.price !== 'number' || !(body.price > 0)) errors.push('price must be a positive number');
+  if (!partial || body.stock !== undefined)
+    if (!Number.isInteger(body.stock) || body.stock < 0) errors.push('stock must not be less than 0');
+  if (body.images !== undefined && (!Array.isArray(body.images) || body.images.some((u) => !/^https?:\/\//.test(u))))
+    errors.push('each value in images must be a URL address');
+  return errors;
+}
+
+function requireAdmin(req, res) {
+  const user = auth(req);
+  if (!user) return fail(res, 401, 'Unauthorized'), null;
+  if (user.role !== 'ADMIN') return fail(res, 403, 'Administrator access is required'), null;
+  return user;
+}
 
 function send(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json' });
@@ -274,13 +324,89 @@ async function handle(req, res) {
     }
   }
 
-  if (resource === 'products') return send(res, 200, { data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } });
-  if (resource === 'categories' || resource === 'users') return send(res, 200, []);
+  if (resource === 'categories') {
+    if (method === 'GET' && !id)
+      return send(res, 200, [...categories.values()].sort((a, b) => a.name.localeCompare(b.name)));
+    if (method === 'GET') return categories.has(id) ? send(res, 200, categories.get(id)) : fail(res, 404, 'Category not found');
+    if (!requireAdmin(req, res)) return;
+    const body = method === 'DELETE' ? {} : await readJson(req);
+    if (method !== 'DELETE') {
+      if ((method === 'POST' || body.name !== undefined) && (typeof body.name !== 'string' || !body.name.trim()))
+        return fail(res, 400, ['name should not be empty']);
+      if (body.image !== undefined && body.image !== null && !/^https?:\/\//.test(body.image))
+        return fail(res, 400, ['image must be a URL address']);
+    }
+    if (method === 'POST') {
+      const c = { id: randomUUID(), name: body.name, image: body.image ?? null, createdAt: now(), updatedAt: now() };
+      categories.set(c.id, c);
+      return send(res, 201, c);
+    }
+    const existing = categories.get(id);
+    if (!existing) return fail(res, 404, `Category with ID ${id} was not found`);
+    if (method === 'PATCH') {
+      const c = { ...existing, ...body, updatedAt: now() };
+      categories.set(id, c);
+      return send(res, 200, c);
+    }
+    if (method === 'DELETE') {
+      // CategoriesService turns the P2003 foreign-key error into a 409.
+      if ([...products.values()].some((p) => p.categoryId === id))
+        return fail(res, 409, 'A category with products cannot be deleted');
+      categories.delete(id);
+      return send(res, 200, existing);
+    }
+  }
+
+  if (resource === 'products') {
+    if (method === 'GET' && !id) {
+      const page = Number(url.searchParams.get('page') ?? 1);
+      const limit = Number(url.searchParams.get('limit') ?? 10);
+      const search = url.searchParams.get('search')?.toLowerCase();
+      const categoryId = url.searchParams.get('categoryId');
+      const sort = url.searchParams.get('sort') ?? 'createdAt';
+      const direction = url.searchParams.get('order') === 'asc' ? 1 : -1;
+      const rows = [...products.values()]
+        .filter((p) => !categoryId || p.categoryId === categoryId)
+        .filter((p) => !search || `${p.title} ${p.description}`.toLowerCase().includes(search))
+        .sort((a, b) => (a[sort] > b[sort] ? 1 : a[sort] < b[sort] ? -1 : 0) * direction);
+      return send(res, 200, {
+        data: rows.slice((page - 1) * limit, page * limit).map(withCategory),
+        meta: { page, limit, total: rows.length, totalPages: Math.ceil(rows.length / limit) },
+      });
+    }
+    if (method === 'GET') return products.has(id) ? send(res, 200, withCategory(products.get(id))) : fail(res, 404, 'Product not found');
+    if (!requireAdmin(req, res)) return;
+    const body = method === 'DELETE' ? {} : await readJson(req);
+    if (method !== 'DELETE') {
+      const errors = validateProduct(body, method === 'PATCH');
+      if (errors.length) return fail(res, 400, errors);
+      if (body.categoryId !== undefined && !categories.has(body.categoryId)) return fail(res, 404, 'Category not found');
+    }
+    if (method === 'POST') {
+      const p = { id: randomUUID(), images: [], ...body, createdAt: now(), updatedAt: now() };
+      products.set(p.id, p);
+      return send(res, 201, withCategory(p));
+    }
+    const existing = products.get(id);
+    if (!existing) return fail(res, 404, `Product with ID ${id} was not found`);
+    if (method === 'PATCH') {
+      const p = { ...existing, ...body, updatedAt: now() };
+      products.set(id, p);
+      return send(res, 200, withCategory(p));
+    }
+    if (method === 'DELETE') {
+      products.delete(id);
+      return send(res, 200, withCategory(existing));
+    }
+  }
+
+  if (resource === 'users') return send(res, 200, [...users.values()]);
 
   return fail(res, 404, 'Not Found');
 }
 
 seedCurrencies();
+seedCatalog();
 createServer((req, res) => {
   handle(req, res).catch((error) => {
     console.error(error);
