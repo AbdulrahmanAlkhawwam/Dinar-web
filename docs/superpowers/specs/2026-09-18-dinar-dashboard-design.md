@@ -1,7 +1,7 @@
 # Dinar Web Dashboard — Design
 
 **Date:** 2026-09-18
-**Status:** approved design, not yet implemented
+**Status:** phases 1–2 implemented
 **Repo:** https://github.com/AbdulrahmanAlkhawwam/Dinar-web
 
 ## Goal
@@ -43,8 +43,11 @@ Constraints this puts on the dashboard:
    `{data, meta: {page, limit, total, totalPages}}`; `/categories`,
    `/currencies` and `/users` return bare arrays.
 6. **Rates are snapshotted.** An operation stores `exchangeRate` and
-   `amountInUSD` at write time. Editing `amount` or `currencyId` re-prices the
-   row at today's rate — the edit form must say so.
+   `amountInUSD` at write time. Editing `amount` keeps the original rate and
+   recomputes USD from it; only changing `currencyId` pulls in today's rate.
+   The edit form warns in that one case. (An earlier draft of this spec said
+   any amount edit re-priced the row — `OperationsService.update` says
+   otherwise.)
 
 ## Architecture
 
@@ -63,7 +66,7 @@ The browser never holds a token and never calls the Dinar API directly.
   bearer. On a 401 it calls `auth/refresh` once, rewrites the access cookie
   and retries; on failure it clears both cookies and returns 401, which the
   query client turns into a redirect to `/login`.
-- `middleware.ts` gates the `(app)` route group on the refresh cookie and
+- `proxy.ts` (Next 16's renamed middleware) gates the `(app)` route group on the refresh cookie and
   reads `role` from the JWT payload to hide admin-only navigation. This is a
   UX affordance only — enforcement stays in `AdminGuard` on the server.
 
@@ -127,11 +130,19 @@ through Tailwind theme extensions. Contrast pairs get a test, mirroring
 **Operations** is the centerpiece: a table over `{data, meta}` with
 server-side pagination, `type` and `from`/`to` filters held in the URL, and a
 create/edit dialog. The amount field pairs with a currency picker and previews
-the resulting `amountInUSD` live from the selected rate, with an explicit
-warning when an edit will re-price an existing row.
+the resulting `amountInUSD` live, at the rate the API will actually store,
+with an explicit warning when a currency change will replace the recorded
+rate.
 
-**Overview** aggregates a date range into income, expense and net KPIs plus
-the income-and-expense splits, all from pure functions in `lib/analytics/`.
+**Overview** aggregates a week, month or year into income, expense and net
+KPIs and a cash-flow chart, all from pure functions in `lib/analytics/`. The
+chart plots income above the baseline and expense below it: the money text
+colours are a red/green pair that collapses for deuteranopes in dark mode
+(palette validator: deutan ΔE 2.3), so position carries identity and colour
+only reinforces it. Marks use their own validated `--color-chart-*` tokens.
+A data table is one click away. If a range has more rows than the browser
+can page through (50 × 100), the figures are flagged as incomplete rather
+than shown quietly low.
 
 **Products, categories, currencies, users** are conventional admin tables with
 dialog forms. Image fields are URL inputs with a preview.
@@ -146,7 +157,8 @@ table.
 
 ## Testing
 
-Vitest, Testing Library, MSW faking the Dinar API. Test-first on the logic
+Vitest, Testing Library, and `scripts/mock-api.mjs` — an in-memory Dinar API
+mirroring the service rules the dashboard depends on (`npm run dev:mock`). Test-first on the logic
 where bugs are invisible: aggregation math, refresh-and-retry, Zod schemas,
 colour contrast. Component tests on the operation form. No Playwright for now.
 
