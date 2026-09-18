@@ -145,7 +145,7 @@
   --color-category-home: var(--color-category-home);
   --color-category-other: var(--color-category-other);
 
-  --font-sans: var(--font-poppins);
+  --font-sans: "Poppins";
 
   /* Named for what they are, as in styles.dart: a stadium at any height,
    * cards that a pill would swallow, and small fills inside a card. */
