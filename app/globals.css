@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Ported from the Dinar Flutter app, lib/core/constants/colors.dart.
+ *
+ * The brand triad is the three layers of the logo and is identical in both
+ * themes — nothing is darkened for light or lightened for dark. What changes
+ * between modes is the surface under them and the containers beside them.
+ */
+:root {
+  /* Brand — the logo's three layers, unchanged across themes. */
+  --color-primary: #68E571;
+  --color-on-primary: #00210A;
+  --color-primary-container: #C7F8CB;
+  --color-on-primary-container: #002106;
+
+  --color-secondary: #00B380;
+  --color-on-secondary: #00251A;
+  --color-secondary-container: #A6F2D6;
+  --color-on-secondary-container: #002013;
+
+  --color-tertiary: #008091;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #ADEBFC;
+  --color-on-tertiary-container: #001F27;
+
+  --color-error: #A8352B;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #FFDAD5;
+  --color-on-error-container: #410001;
+
+  /* Neutral chrome — no hue, so nothing competes with the brand. */
+  --color-surface: #FFFFFF;
+  --color-on-surface: #000000;
+  --color-surface-container-low: #F7F7F7;
+  --color-surface-container: #F0F0F0;
+  --color-surface-container-high: #E7E7E7;
+  --color-on-surface-variant: #454545;
+  --color-outline: #6B6B6B;
+  --color-outline-variant: #D4D4D4;
+
+  /*
+   * Money direction is not a Material role, and `error` is the wrong home for
+   * an expense: spending is not an error state.
+   */
+  --color-income: #0E6B44;
+  --color-expense: #A8352B;
+
+  /* The eight category hues. A category stores the light value; the dark twin
+   * below is resolved at paint time so it reads as itself in either mode. */
+  --color-category-groceries: #A8352B;
+  --color-category-transport: #8A5A00;
+  --color-category-food: #005E6E;
+  --color-category-bills: #6A4BA8;
+  --color-category-health: #A33267;
+  --color-category-salary: #0E6B44;
+  --color-category-home: #7A5230;
+  --color-category-other: #5A6357;
+}
+
+.dark {
+  --color-primary: #68E571;
+  --color-on-primary: #00210A;
+  --color-primary-container: #0B4A1B;
+  --color-on-primary-container: #C7F8CB;
+
+  --color-secondary: #00B380;
+  --color-on-secondary: #00251A;
+  --color-secondary-container: #00432F;
+  --color-on-secondary-container: #A6F2D6;
+
+  --color-tertiary: #008091;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #00404A;
+  --color-on-tertiary-container: #ADEBFC;
+
+  --color-error: #FF9E93;
+  --color-on-error: #5F0F09;
+  --color-error-container: #8C1D14;
+  --color-on-error-container: #FFDAD5;
+
+  --color-surface: #000000;
+  --color-on-surface: #FFFFFF;
+  --color-surface-container-low: #0D0D0D;
+  --color-surface-container: #171717;
+  --color-surface-container-high: #212121;
+  --color-on-surface-variant: #C6C6C6;
+  --color-outline: #8C8C8C;
+  --color-outline-variant: #3A3A3A;
+
+  --color-income: #6BD79E;
+  --color-expense: #FF9E93;
+
+  --color-category-groceries: #FF9E93;
+  --color-category-transport: #F3BF5C;
+  --color-category-food: #6BD3EB;
+  --color-category-bills: #C7B2FF;
+  --color-category-health: #FFA8CC;
+  --color-category-salary: #6BD79E;
+  --color-category-home: #E5B48A;
+  --color-category-other: #B6C0B1;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-on-primary-container: var(--color-on-primary-container);
+
+  --color-secondary: var(--color-secondary);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+
+  --color-tertiary: var(--color-tertiary);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+
+  --color-error: var(--color-error);
+  --color-on-error: var(--color-on-error);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+
+  --color-surface: var(--color-surface);
+  --color-on-surface: var(--color-on-surface);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-surface-container: var(--color-surface-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-outline: var(--color-outline);
+  --color-outline-variant: var(--color-outline-variant);
+
+  --color-income: var(--color-income);
+  --color-expense: var(--color-expense);
+
+  --color-category-groceries: var(--color-category-groceries);
+  --color-category-transport: var(--color-category-transport);
+  --color-category-food: var(--color-category-food);
+  --color-category-bills: var(--color-category-bills);
+  --color-category-health: var(--color-category-health);
+  --color-category-salary: var(--color-category-salary);
+  --color-category-home: var(--color-category-home);
+  --color-category-other: var(--color-category-other);
+
+  --font-sans: var(--font-poppins);
+
+  /* Named for what they are, as in styles.dart: a stadium at any height,
+   * cards that a pill would swallow, and small fills inside a card. */
+  --radius-pill: 999px;
+  --radius-card: 22px;
+  --radius-inner: 14px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* Focus is a 2px ring in primary; the error ring is the same shape. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
