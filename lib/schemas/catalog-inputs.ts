@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:';
-  } catch {
-    return false;
-  }
-}
+import { isHttpUrl } from '@/lib/url';
 
 /** The product form takes image URLs one per line. */
 export function parseImageList(text: string): string[] {

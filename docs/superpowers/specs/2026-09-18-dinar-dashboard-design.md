@@ -1,7 +1,7 @@
 # Dinar Web Dashboard — Design
 
 **Date:** 2026-09-18
-**Status:** phases 1–3 implemented
+**Status:** phases 1–4 implemented
 **Repo:** https://github.com/AbdulrahmanAlkhawwam/Dinar-web
 
 ## Goal
@@ -146,6 +146,17 @@ than shown quietly low.
 
 **Products, categories, currencies, users** are conventional admin tables with
 dialog forms. Image fields are URL inputs with a preview.
+
+**Users** works around the backend rather than on top of it.
+`UsersService.create` and `update` store passwords unhashed while login
+bcrypt-compares them, so an account made with `POST /users`, or a password
+set with `PATCH /users`, can never sign in. New users are therefore created
+through `/api/admin/users`, which calls `/auth/register` (which hashes) and
+then promotes to ADMIN with the admin's own token if asked. The edit form has
+no password field. An admin cannot delete or demote their own account, and
+deleting anyone warns that their operations go with them (`onDelete:
+Cascade`). While `HEAD /users` answers without credentials, the page says the
+endpoints are unprotected; the notice disappears once the backend is fixed.
 
 ## Errors
 

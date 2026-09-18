@@ -202,6 +202,8 @@ async function handle(req, res) {
 
   if (resource === 'auth') {
     const body = await readJson(req);
+    if (id === 'register' && [...users.values()].some((u) => u.email === body.email))
+      return fail(res, 409, 'An account with this email already exists');
     if (id === 'login' || id === 'register') {
       if (!body.email || !body.password) return fail(res, 400, ['email must be an email']);
       const user = userFor(body.email, body.name);
@@ -400,7 +402,30 @@ async function handle(req, res) {
     }
   }
 
-  if (resource === 'users') return send(res, 200, [...users.values()]);
+  // Unguarded, like UsersController today.
+  if (resource === 'users') {
+    if (method === 'GET' || method === 'HEAD') {
+      if (!id) return send(res, 200, [...users.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      return users.has(id) ? send(res, 200, users.get(id)) : fail(res, 404, `User with ID ${id} was not found`);
+    }
+    const existing = users.get(id);
+    if (!existing) return fail(res, 404, `User with ID ${id} was not found`);
+    if (method === 'PATCH') {
+      const body = await readJson(req);
+      if (body.role !== undefined && !['USER', 'ADMIN'].includes(body.role))
+        return fail(res, 400, ['role must be one of the following values: USER, ADMIN']);
+      const { password: _ignored, ...changes } = body;
+      const user = { ...existing, ...changes, updatedAt: now() };
+      users.set(id, user);
+      return send(res, 200, user);
+    }
+    if (method === 'DELETE') {
+      // Operation.user is onDelete: Cascade.
+      for (const op of operations.values()) if (op.userId === id) operations.delete(op.id);
+      users.delete(id);
+      return send(res, 200, existing);
+    }
+  }
 
   return fail(res, 404, 'Not Found');
 }
