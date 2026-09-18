@@ -48,6 +48,12 @@
   --color-income: #0E6B44;
   --color-expense: #A8352B;
 
+  /* Chart marks, separate from the text tokens above and chosen with the
+   * dataviz palette validator. Red and green at equal lightness collapse for
+   * deuteranopes, so these also differ in lightness (deutan ΔE 11.8). */
+  --color-chart-income: #2E9E62;
+  --color-chart-expense: #A8352B;
+
   /* The eight category hues. A category stores the light value; the dark twin
    * below is resolved at paint time so it reads as itself in either mode. */
   --color-category-groceries: #A8352B;
@@ -93,6 +99,12 @@
   --color-income: #6BD79E;
   --color-expense: #FF9E93;
 
+  /* The text tokens fail as marks here: too light for the band, and deutan
+   * ΔE 2.3 — one colour to a red-green colourblind reader. This pair is
+   * deutan ΔE 12.0, and the red clears 3.43:1 on the dark card. */
+  --color-chart-income: #3AAA6B;
+  --color-chart-expense: #B83B31;
+
   --color-category-groceries: #FF9E93;
   --color-category-transport: #F3BF5C;
   --color-category-food: #6BD3EB;
@@ -135,6 +147,8 @@
 
   --color-income: var(--color-income);
   --color-expense: var(--color-expense);
+  --color-chart-income: var(--color-chart-income);
+  --color-chart-expense: var(--color-chart-expense);
 
   --color-category-groceries: var(--color-category-groceries);
   --color-category-transport: var(--color-category-transport);

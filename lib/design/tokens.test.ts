@@ -105,6 +105,32 @@ describe('category hues', () => {
   });
 });
 
+describe('chart marks', () => {
+  // Chosen with the dataviz palette validator, not by eye. The money *text*
+  // tokens failed as marks in dark mode: both too light, and a red/green pair
+  // at equal lightness collapses to one colour for deuteranopes (ΔE 2.3).
+  // These separate by lightness as well as hue.
+  test.each([
+    ['light', light, '#2e9e62', '#a8352b'],
+    ['dark', dark, '#3aaa6b', '#b83b31'],
+  ])('%s uses the validated pair', (_name, tokens, income, expense) => {
+    expect(tokens['--color-chart-income']?.toLowerCase()).toBe(income);
+    expect(tokens['--color-chart-expense']?.toLowerCase()).toBe(expense);
+  });
+
+  test.each([
+    ['light', light],
+    ['dark', dark],
+  ])('%s marks clear the 3:1 non-text bar on the card they sit on', (_name, tokens) => {
+    for (const mark of ['--color-chart-income', '--color-chart-expense']) {
+      expect(
+        contrastRatio(tokens[mark], tokens['--color-surface-container-low']),
+        mark,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+});
+
 describe('the documented cost', () => {
   // colors.dart states this plainly rather than hiding it: a filled primary
   // button has almost no edge against a white page, which is why filled

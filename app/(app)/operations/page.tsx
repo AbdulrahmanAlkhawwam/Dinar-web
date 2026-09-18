@@ -1,5 +1,15 @@
-import { NotBuilt } from '@/components/shell/not-built';
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
-export default function Page() {
-  return <NotBuilt title="Operations" phase="phase 2 (finance)" />;
+import { OperationsView } from '@/components/operations/operations-view';
+
+export const metadata: Metadata = { title: 'Operations · Dinar' };
+
+export default function OperationsPage() {
+  return (
+    // useSearchParams needs a Suspense boundary above it.
+    <Suspense>
+      <OperationsView />
+    </Suspense>
+  );
 }
